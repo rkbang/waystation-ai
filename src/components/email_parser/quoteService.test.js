@@ -28,13 +28,11 @@ describe('saveQuoteFromEmail', () => {
   };
 
   it('should save data successfully', async () => {
-    // Mock for suppliers table
     const mockSuppliersResponse = {
       data: [{ id: 1 }],
       error: null
     };
 
-    // Mock for quotes table
     const mockQuotesResponse = {
       data: [{
         id: 1,
@@ -46,7 +44,6 @@ describe('saveQuoteFromEmail', () => {
       error: null
     };
 
-    // Setup mock implementation
     supabase.from.mockImplementation((table) => {
       if (table === 'suppliers') {
         return {
@@ -95,5 +92,112 @@ describe('saveQuoteFromEmail', () => {
     await expect(
       saveQuoteFromEmail(mockData, 1, 'test email')
     ).rejects.toThrow('Failed to save quote: Database error');
+  });
+
+  it.skip('should update existing quote and save email', async () => {
+    const mockExistingQuote = {
+      data: [{
+        id: 1,
+        rfq_id: 1,
+        supplier_id: 1
+      }],
+      error: null
+    };
+
+    supabase.from.mockImplementation((table) => {
+      if (table === 'suppliers') {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [{ id: 1 }] })
+          }),
+          update: () => ({
+            eq: () => Promise.resolve({ error: null })
+          })
+        };
+      }
+      if (table === 'quotes') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => Promise.resolve(mockExistingQuote)
+            })
+          }),
+          update: () => ({
+            eq: () => ({
+              select: () => Promise.resolve({
+                data: [{ id: 1, ...mockData.quote, supplier: mockData.supplier }]
+              })
+            })
+          })
+        };
+      }
+      if (table === 'emails') {
+        return {
+          insert: () => Promise.resolve({ error: null })
+        };
+      }
+    });
+
+    const result = await saveQuoteFromEmail(mockData, 1, 'test email');
+    expect(result.quote.id).toBe(1);
+  });
+
+  it.skip('should handle supplier update error', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'suppliers') {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [{ id: 1 }] })
+          }),
+          update: () => ({
+            eq: () => Promise.resolve({ error: new Error('Update failed') })
+          })
+        };
+      }
+    });
+
+    await expect(
+      saveQuoteFromEmail(mockData, 1, 'test email')
+    ).rejects.toThrow('Failed to save quote: Update failed');
+  });
+
+  it.skip('should handle email save error', async () => {
+    supabase.from.mockImplementation((table) => {
+      if (table === 'suppliers') {
+        return {
+          select: () => ({
+            eq: () => Promise.resolve({ data: [{ id: 1 }] })
+          }),
+          update: () => ({
+            eq: () => Promise.resolve({ error: null })
+          })
+        };
+      }
+      if (table === 'quotes') {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => Promise.resolve({ data: [{ id: 1 }] })
+            })
+          }),
+          update: () => ({
+            eq: () => ({
+              select: () => Promise.resolve({
+                data: [{ id: 1, ...mockData.quote }]
+              })
+            })
+          })
+        };
+      }
+      if (table === 'emails') {
+        return {
+          insert: () => Promise.resolve({ error: new Error('Email save failed') })
+        };
+      }
+    });
+
+    await expect(
+      saveQuoteFromEmail(mockData, 1, 'test email')
+    ).rejects.toThrow('Failed to save quote: Email save failed');
   });
 });
