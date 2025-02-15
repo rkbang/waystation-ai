@@ -14,7 +14,7 @@ A web-based system for managing Requests for Quotes (RFQs), suppliers, and quote
 
 ## Features
 - Supplier Management (Add, Edit, View)
-- RFQ Management (Create, Edit, View)
+- RFQ Management (Create, View)
 - Automated Email Quote Processing using OpenAI/Gemini
 - Quote Comparison and Viewing
 - Real-time Data Updates
