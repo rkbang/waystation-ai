@@ -11,46 +11,6 @@ const EmailProcessingTab = ({ rfqs }) => {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  // Simple regex-based parsing
-  const parseEmail = (content) => {
-    try {
-      console.log('Parsing email with regex:', content);
-      
-      // Basic regex patterns
-      const extractedData = {
-        company_name: content.match(/NutraSource Supply/)?.[0] || '',
-        contact_name: content.match(/[Rr]egards,\s*(.*?)(?:\s*Sales\s+Manager|$)/m)?.[1] || '',
-        contact_email: content.match(/[Ee]mail:\s*([^\s]+@[^\s]+)/)?.[1] || '',
-        contact_phone: content.match(/[Pp]hone:\s*([^,\n]+)/)?.[1] || '',
-        price: content.match(/Price per Pound:\s*\$?([\d.]+)/)?.[1] || '',
-        certifications: (content.match(/Certifications:([^]*?)(?=\n\n|\n[A-Z]|$)/i)?.[1] || '')
-          .split(',')
-          .map(cert => cert.trim())
-          .filter(Boolean)
-      };
-
-      console.log('Extracted data:', extractedData);
-
-      return {
-        supplier: {
-          company_name: extractedData.company_name,
-          contact_name: extractedData.contact_name,
-          contact_email: extractedData.contact_email,
-          contact_phone: extractedData.contact_phone,
-          hq_address: '',
-          payment_terms: ''
-        },
-        quote: {
-          price_per_pound: parseFloat(extractedData.price) || 0,
-          certifications: extractedData.certifications
-        }
-      };
-    } catch (error) {
-      console.error('Error in parseEmail:', error);
-      throw error;
-    }
-  };
-
   const handleProcessEmail = async () => {
     if (!selectedRfq || !emailContent) {
       setError('Please select an RFQ and provide email content');
@@ -78,9 +38,8 @@ const EmailProcessingTab = ({ rfqs }) => {
           parsedData = await parseEmailWithGemini(emailContent);
           method = 'Gemini';
         } catch (geminiError) {
-          console.warn('Gemini parsing failed, falling back to regex:', geminiError);
-          parsedData = parseEmail(emailContent);
-          method = 'Regex';
+          console.error('All parsing attempts failed:', geminiError);
+          throw new Error('Unable to parse email content. Please check the format and try again.');
         }
       }
 
@@ -111,8 +70,9 @@ const EmailProcessingTab = ({ rfqs }) => {
       <h3 className="text-lg font-medium">Process Quote Email</h3>
       
       {error && (
-        <div className="p-4 bg-red-50 text-red-500 rounded">
-          {error}
+        <div className="p-4 bg-red-50 text-red-500 rounded border border-red-200">
+          <p className="font-medium">Error Processing Email</p>
+          <p>{error}</p>
         </div>
       )}
 
