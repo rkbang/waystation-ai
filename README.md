@@ -43,11 +43,57 @@ src/
 └── App.jsx                # Main application component
 ```
 
-Setup and Installation
+##Setup and Installation
 
 1. Clone this repository
 2. Install dependencies using ```npm install```
 3. Configure environment variables
+
+Setup Database in [supabase](https://supabase.com/dashboard/projects)
+
+```sql
+-- Suppliers table
+create table suppliers (
+  id bigint primary key generated always as identity,
+  company_name text not null,
+  contact_name text,
+  contact_email text,
+  contact_phone text,
+  hq_address text,
+  payment_terms text
+);
+
+-- RFQs table
+create table rfqs (
+  id bigint primary key generated always as identity,
+  item text not null,
+  due_date date not null,
+  amount_lbs numeric not null,
+  ship_to_location text,
+  required_certifications text[]
+);
+
+-- Quotes table
+create table quotes (
+  id bigint primary key generated always as identity,
+  rfq_id bigint references rfqs(id),
+  supplier_id bigint references suppliers(id),
+  date_submitted timestamp with time zone default now(),
+  price_per_pound numeric not null,
+  country_of_origin text,
+  certifications text[],
+  minimum_order_quantity numeric
+);
+
+-- Emails table
+create table emails (
+  id bigint primary key generated always as identity,
+  quote_id bigint references quotes(id),
+  content text not null,
+  extracted_data jsonb,
+  created_at timestamp with time zone default now()
+);
+```
 
 Create a .env.local file and add required environment variables:
 
@@ -60,8 +106,11 @@ VITE_GEMINI_API_KEY=your-gemini-api-key
 
 Start the development server
 ```
+npm install
 npm run dev
 ```
+## Database Schema
+![Alt text](database_schema.png)
 
 ## AI Integration
 
@@ -100,3 +149,5 @@ The code is organized by feature/module, making it easy to navigate and maintain
 - `ViewQuotesTab.jsx`: Quote comparison and viewing interface.
 - `quoteService.js`: Quote retrieval and management functions. (Consider renaming to `quotesService.js` for consistency)
 
+## Proposed Architecture
+![Alt text](future_design.png)
