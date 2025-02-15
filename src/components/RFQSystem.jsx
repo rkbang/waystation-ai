@@ -18,11 +18,11 @@ const RFQSystem = () => {
   const [rfqs, setRfqs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Supplier states
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
-  
+
   // RFQ states
   const [showAddRFQ, setShowAddRFQ] = useState(false);
   const [editingRFQ, setEditingRFQ] = useState(null);
@@ -140,7 +140,7 @@ const RFQSystem = () => {
               <TabsTrigger value="quotes">View Quotes</TabsTrigger>
             </TabsList>
             <TabsContent value="suppliers">
-              <SuppliersTab 
+              <SuppliersTab
                 suppliers={suppliers}
                 loading={loading}
                 showAddSupplier={showAddSupplier}
@@ -156,28 +156,24 @@ const RFQSystem = () => {
               />
             </TabsContent>
             <TabsContent value="rfqs">
-              <RFQsTab 
+              <RFQsTab
                 rfqs={rfqs}
                 loading={loading}
                 showAddRFQ={showAddRFQ}
-                editingRFQ={editingRFQ}
                 onAddClick={() => setShowAddRFQ(true)}
-                onEditClick={setEditingRFQ}
                 onAddSubmit={handleAddRFQ}
-                onEditSubmit={handleEditRFQ}
                 onCancel={() => {
                   setShowAddRFQ(false);
-                  setEditingRFQ(null);
                 }}
               />
             </TabsContent>
             <TabsContent value="email">
-              <EmailProcessingTab 
+              <EmailProcessingTab
                 rfqs={rfqs}
               />
             </TabsContent>
             <TabsContent value="quotes">
-              <ViewQuotesTab 
+              <ViewQuotesTab
                 rfqs={rfqs}
               />
             </TabsContent>
