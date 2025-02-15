@@ -117,8 +117,7 @@ npm run dev
 The system uses a multi-tiered approach for parsing supplier emails:
 
 1. **Primary Parser:** OpenAI GPT-3.5
-2. **Secondary Parser:** Google Gemini
-3. **Default Fallback Parser:** Regular Expressions (RegEx)
+2. **Secondary Parser(If above fails):** Google Gemini
 
 This allows the system to leverage the strengths of different AI models and provides a robust solution for handling variations in email formats.
 
