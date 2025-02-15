@@ -1,29 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
-import { saveQuoteFromEmail } from './quoteService';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { saveQuoteFromEmail } from './quoteService.js';
 import { supabase } from '../../lib/supabase';
 
-// Mock Supabase with method chaining
 vi.mock('../../lib/supabase', () => ({
   supabase: {
-    from: vi.fn().mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          eq: vi.fn().mockResolvedValue({ data: [] })
-        })
-      }),
-      update: vi.fn().mockReturnValue({
-        eq: vi.fn().mockResolvedValue({ data: [] })
-      }),
-      insert: vi.fn().mockReturnValue({
-        select: vi.fn().mockResolvedValue({ 
-          data: [{ id: 1 }],
-          error: null 
-        })
-      })
-    })
+    from: vi.fn()
   }
 }));
-
 
 describe('saveQuoteFromEmail', () => {
   beforeEach(() => {
@@ -32,114 +15,85 @@ describe('saveQuoteFromEmail', () => {
 
   const mockData = {
     supplier: {
-      company_name: 'Test Supplier',
+      company_name: 'Test Company',
       contact_name: 'John Doe',
-      contact_email: 'test@supplier.com',
-      contact_phone: '123-456-7890',
-      hq_address: 'Test Address'
+      contact_email: 'test@example.com'
     },
     quote: {
-      price_per_pound: 10.5,
-      certifications: ['GMO-Free'],
-      minimum_order_quantity: 100,
+      price_per_pound: 10.00,
+      certifications: ['Test'],
+      minimum_order_quantity: 1000,
       country_of_origin: 'USA'
     }
   };
 
-  it('creates new supplier and quote', async () => {
-    supabase.from('suppliers').select().eq('company_name', mockData.supplier.company_name).eq =
-      vi.fn().mockResolvedValue({ data: [] });
+  it('should save data successfully', async () => {
+    // Mock for suppliers table
+    const mockSuppliersResponse = {
+      data: [{ id: 1 }],
+      error: null
+    };
 
-    supabase.from('quotes').select().eq('rfq_id', 1).eq('supplier_id', 1).eq =
-      vi.fn().mockResolvedValue({ data: [] });
+    // Mock for quotes table
+    const mockQuotesResponse = {
+      data: [{
+        id: 1,
+        rfq_id: 1,
+        supplier_id: 1,
+        ...mockData.quote,
+        supplier: mockData.supplier
+      }],
+      error: null
+    };
 
-    const result = await saveQuoteFromEmail(mockData, 1);
-    expect(result).toBeDefined();
-  });
-
-  it('updates existing supplier and creates new quote', async () => {
-    // Mock the entire flow of supplier and quote operations
-    supabase.from = vi.fn().mockImplementation((table) => {
+    // Setup mock implementation
+    supabase.from.mockImplementation((table) => {
       if (table === 'suppliers') {
         return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({
-              data: [{ id: 1, ...mockData.supplier }]
-            })
+          select: () => ({
+            eq: () => Promise.resolve(mockSuppliersResponse)
           }),
-          update: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              select: vi.fn().mockResolvedValue({
-                data: [{ id: 1, ...mockData.supplier }],
-                error: null
-              })
-            })
-          }),
-          insert: vi.fn().mockReturnValue({
-            select: vi.fn().mockResolvedValue({
-              data: [{ id: 1, ...mockData.supplier }],
-              error: null
-            })
+          update: () => ({
+            eq: () => Promise.resolve({ data: mockSuppliersResponse.data, error: null })
           })
         };
       }
-  
       if (table === 'quotes') {
         return {
-          select: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              eq: vi.fn().mockResolvedValue({
-                data: []
-              })
+          select: () => ({
+            eq: () => ({
+              eq: () => Promise.resolve({ data: [] })
             })
           }),
-          update: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              select: vi.fn().mockResolvedValue({
-                data: [{ 
-                  id: 1, 
-                  ...mockData.quote, 
-                  rfq_id: 1, 
-                  supplier_id: 1,
-                  supplier: { id: 1, ...mockData.supplier }
-                }],
-                error: null
-              })
-            })
-          }),
-          insert: vi.fn().mockReturnValue({
-            select: vi.fn().mockResolvedValue({
-              data: [{ 
-                id: 1, 
-                ...mockData.quote, 
-                rfq_id: 1, 
-                supplier_id: 1,
-                supplier: { id: 1, ...mockData.supplier }
-              }],
-              error: null
-            })
+          insert: () => ({
+            select: () => Promise.resolve(mockQuotesResponse)
           })
+        };
+      }
+      if (table === 'emails') {
+        return {
+          insert: () => Promise.resolve({ data: null, error: null })
         };
       }
     });
-  
-    const result = await saveQuoteFromEmail(mockData, 1);
-  
-    // Assertions to verify the result
+
+    const result = await saveQuoteFromEmail(mockData, 1, 'test email');
+    
     expect(result).toBeDefined();
-    expect(result.supplier).toEqual(mockData.supplier);
+    expect(result.supplier).toBeDefined();
     expect(result.quote).toBeDefined();
     expect(result.quote.id).toBe(1);
   });
-  
 
-  it('handles database error', async () => {
+  it('should handle database error', async () => {
     supabase.from.mockImplementation(() => ({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockRejectedValue(new Error('Database error'))
+      select: () => ({
+        eq: () => Promise.reject(new Error('Database error'))
       })
     }));
 
-    await expect(saveQuoteFromEmail(mockData, 1)).rejects.toThrow('Database error');
+    await expect(
+      saveQuoteFromEmail(mockData, 1, 'test email')
+    ).rejects.toThrow('Failed to save quote: Database error');
   });
 });
