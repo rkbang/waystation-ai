@@ -119,7 +119,7 @@ The system uses a multi-tiered approach for parsing supplier emails:
 1. **Primary Parser:** OpenAI GPT-3.5
 2. **Secondary Parser(If above fails):** Google Gemini
 
-This allows the system to leverage the strengths of different AI models and provides a robust solution for handling variations in email formats.
+This secondary parser is for fallback if primary fails for any reason.
 
 ## Code Layout
 
@@ -148,5 +148,5 @@ The code is organized by feature/module, making it easy to navigate and maintain
 - `ViewQuotesTab.jsx`: Quote comparison and viewing interface.
 - `quoteService.js`: Quote retrieval and management functions. (Consider renaming to `quotesService.js` for consistency)
 
-## Proposed Architecture
+## Proposed Architecture For Future(Long Term)
 ![Alt text](future_design.png)
