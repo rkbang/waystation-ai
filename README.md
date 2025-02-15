@@ -43,7 +43,7 @@ src/
 └── App.jsx                # Main application component
 ```
 
-##Setup and Installation
+## Setup and Installation
 
 1. Clone this repository
 2. Install dependencies using ```npm install```
